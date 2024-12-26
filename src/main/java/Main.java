@@ -1,6 +1,8 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Main {
   public static void main(String[] args) {
@@ -11,6 +13,7 @@ public class Main {
     BufferedReader reader;
     String in;
     String word;
+    ArrayList<String> list = new ArrayList<String>();
 
     // Uncomment this block to pass the first stage
 
@@ -27,7 +30,20 @@ public class Main {
        reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
        writer = new PrintWriter(outputStream, true);
        in = reader.readLine();
+       String headerLine;
+       while ((headerLine = reader.readLine()) != null && !headerLine.isEmpty()) {
+         list.add(headerLine);
+       }
        String[] parts = in.split(" ");
+       if(parts[1].equals("/user-agent")) {
+         String header = list.get(1);
+         String[] userParts = header.split(":");
+         writer.print("HTTP/1.1 200 OK\r\n");
+         writer.print("Content-Type: text/plain\r\n");
+         writer.print("Content-Length: " + userParts[1].trim().length() + "\r\n\r\n");
+         writer.print(userParts[1].trim() + "\r\n");
+         //System.out.println(userResponse);
+       }
        if (parts[1].equals("/")) {
          writer.print("HTTP/1.1 200 OK\r\n\r\n");
          writer.flush();
