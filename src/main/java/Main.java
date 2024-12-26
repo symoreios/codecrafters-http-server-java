@@ -10,6 +10,7 @@ public class Main {
     PrintWriter writer;
     BufferedReader reader;
     String in;
+    String word;
 
     // Uncomment this block to pass the first stage
 
@@ -28,12 +29,27 @@ public class Main {
        in = reader.readLine();
        String[] parts = in.split(" ");
        if (parts[1].equals("/")) {
-         writer.println("HTTP/1.1 200 OK\r\n\r\n");
+         writer.print("HTTP/1.1 200 OK\r\n\r\n");
          writer.flush();
-       } else {
-         writer.println("HTTP/1.1 404 Not Found\r\n\r\n");
-         writer.flush();
+         return;
        }
+
+       String[] urlParts = parts[1].split("/");
+       System.out.println(urlParts[0]);
+       if (!urlParts[1].equals("echo")) {
+         writer.print("HTTP/1.1 404 Not Found\r\n\r\n");
+         writer.flush();
+         return;
+       }
+
+       word = urlParts[2];
+       writer.print("HTTP/1.1 200 OK\r\n");
+       writer.print("Content-Type: text/plain\r\n");
+       writer.print("Content-Length: " + word.length() + "\r\n");
+       writer.print("\r\n");
+       writer.print(word);
+       writer.print("\r\n");
+       writer.flush();
 
      } catch (IOException e) {
        System.out.println("IOException: " + e.getMessage());
