@@ -14,7 +14,7 @@ public class HttpResponse {
     private HttpRequest request;
     private Path directory;
     private byte[] bodyBytes;
-    private int contentLength;
+    private int contentLength = 0;
     private String contentEncoding;
 
     public byte[] getContentEncodingBytes() {
@@ -85,6 +85,7 @@ public class HttpResponse {
                     setStatusMessage("OK");
                     setContentType("application/octet-stream");
                     this.bodyBytes = Files.readAllBytes(filePath);
+                    setContentLength(bodyBytes.length);
                 } else {
                     setStatusCode(404);
                     setStatusMessage("Not Found");
@@ -107,7 +108,6 @@ public class HttpResponse {
                     Files.writeString(filePath, body);
                     setStatusCode(201);
                     setStatusMessage("Created");
-                System.out.println("past created");
 
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -146,7 +146,7 @@ public class HttpResponse {
             setStatusCode(200);
             setStatusMessage("OK");
             setContentType("text/plain");
-            if (this.contentType == null) {
+            if (request.getEncoding() == null) {
                 setContentLength(word.length());
                 setBody(word);
             } else {
@@ -177,6 +177,7 @@ public class HttpResponse {
             gzipOutputStream.write(input);
         }
         this.contentEncodingBytes = byteArrayOutputStream.toByteArray();
+        this.contentLength = byteArrayOutputStream.size();
     }
 
     @Override
@@ -194,11 +195,14 @@ public class HttpResponse {
         if (contentType != null) {
             sb.append("Content-Type: ").append(contentType).append("\r\n");
         }
-        if (bodyBytes != null) {
-            sb.append("Content-Length: ").append(bodyBytes.length).append("\r\n");
-        }
-        if (body != null) {
-            sb.append("Content-Length: ").append(contentLength).append("\r\n");
+        if (this.contentLength != 0) {
+            if (bodyBytes != null) {
+                sb.append("Content-Length: ").append(bodyBytes.length).append("\r\n");
+            } else if (body != null) {
+                sb.append("Content-Length: ").append(body.length()).append("\r\n");
+            } else if (contentEncodingBytes != null) {
+                sb.append("Content-Length: ").append(this.contentLength).append("\r\n");
+            }
         }
 
         sb.append("\r\n");

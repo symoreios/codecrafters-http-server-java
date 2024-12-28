@@ -82,10 +82,12 @@ public class Main {
             httpResponse.directoryResponse();
           }
           writer.print(httpResponse);
-          if (httpResponse.getContentEncodingBytes() != null) {
-            writer.print(httpResponse.getContentEncodingBytes());
-          }
           writer.flush();
+          if (httpResponse.getContentEncodingBytes() != null) {
+            byte[] compressedData = httpResponse.getContentEncodingBytes();
+            outputStream.write(compressedData);
+            outputStream.flush();
+          }
         } catch (IOException ex) {
         throw new RuntimeException(ex);
     }
