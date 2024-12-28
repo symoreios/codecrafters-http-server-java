@@ -17,6 +17,12 @@ public class HttpResponse {
     private int contentLength;
     private String contentEncoding;
 
+    public byte[] getContentEncodingBytes() {
+        return contentEncodingBytes;
+    }
+
+    private byte[] contentEncodingBytes;
+
     public HttpResponse(HttpRequest request, Path directory) {
         this.request = request;
         this.directory = directory;
@@ -45,7 +51,7 @@ public class HttpResponse {
         this.contentLength = contentLength;
     }
 
-    public void buildResponse() {
+    public void buildResponse() throws IOException {
         String url = request.getUrl();
         String method = request.getMethod();
 
@@ -131,7 +137,7 @@ public class HttpResponse {
         setBody("Hello from the root!");
     }
 
-    private void handleEcho() {
+    private void handleEcho() throws IOException {
         String url = request.getUrl();
         String[] parts = url.split("/", 3);
 
@@ -140,8 +146,12 @@ public class HttpResponse {
             setStatusCode(200);
             setStatusMessage("OK");
             setContentType("text/plain");
-            setContentLength(word.length());
-            setBody(word);
+            if (this.contentType == null) {
+                setContentLength(word.length());
+                setBody(word);
+            } else {
+                compressString(word);
+            }
         } else {
             setStatusCode(404);
             setStatusMessage("Not Found");
@@ -157,14 +167,16 @@ public class HttpResponse {
         setBody("The requested URL was not found on this server.");
     }
 
-
-    private static byte[] gzipCompress(byte[] data) throws IOException {
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        try (GZIPOutputStream gzipOut = new GZIPOutputStream(byteStream)) {
-            gzipOut.write(data);
-            gzipOut.finish();
+    private void compressString(String word) throws IOException {
+        if (word == null || word.isEmpty()) {
+            return;
         }
-        return byteStream.toByteArray();
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(byteArrayOutputStream)) {
+            byte[] input = word.getBytes(StandardCharsets.UTF_8);
+            gzipOutputStream.write(input);
+        }
+        this.contentEncodingBytes = byteArrayOutputStream.toByteArray();
     }
 
     @Override

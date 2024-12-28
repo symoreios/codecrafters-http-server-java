@@ -82,6 +82,9 @@ public class Main {
             httpResponse.directoryResponse();
           }
           writer.print(httpResponse);
+          if (httpResponse.getContentEncodingBytes() != null) {
+            writer.print(httpResponse.getContentEncodingBytes());
+          }
           writer.flush();
         } catch (IOException ex) {
         throw new RuntimeException(ex);
