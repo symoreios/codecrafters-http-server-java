@@ -43,8 +43,6 @@ public class HttpResponse {
         String url = request.getUrl();
         String method = request.getMethod();
 
-
-
         if (url.equals("/user-agent")) {
             handleUserAgent();
         } else if (url.equals("/")) {
@@ -58,6 +56,14 @@ public class HttpResponse {
 
     public void directoryResponse(){
 
+        if ("GET".equals(request.getMethod())) {
+            handleGet();
+        } else if ("POST".equals(request.getMethod())) {
+            handlePost();
+        }
+    }
+
+    private void handleGet() {
         if ("GET".equals(request.getMethod()) && request.getUrl().startsWith("/files") && directory != null) {
             String fileName = request.getUrl().substring("/files/".length());
             Path filePath = directory.resolve(fileName);
@@ -79,6 +85,24 @@ public class HttpResponse {
         }
     }
 
+    private void handlePost() {
+        if ("POST".equals(request.getMethod()) && request.getUrl().startsWith("/files") && directory != null) {
+            String fileName = request.getUrl().substring("/files/".length());
+            Path filePath = directory.resolve(fileName);
+            String body = request.getBody().getFirst();
+            System.out.println("body: " + body);
+            try {
+                    Files.writeString(filePath, body);
+                    setStatusCode(201);
+                    setStatusMessage("Created");
+                System.out.println("past created");
+
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     private void handleUserAgent() {
         String userAgent = "Unknown";
         for (String header : request.getHeaders()) {
@@ -87,7 +111,6 @@ public class HttpResponse {
                 break;
             }
         }
-        System.out.println(userAgent);
         setStatusCode(200);
         setStatusMessage("OK");
         setContentType("text/plain");

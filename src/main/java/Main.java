@@ -38,44 +38,53 @@ public class Main {
   }
 
   private static void handleConnection(Socket client, Path directory) {
-    ArrayList<String> list = new ArrayList<>();
+    ArrayList<String> headers = new ArrayList<>();
     String line;
     boolean isBody = false;
     List<String> body = new ArrayList<>();
+    String contentLength = "Content-Length";
+    boolean lengthSeen = false;
+    int contentLengthInt = 0;
+
     try {
-    OutputStream outputStream = client.getOutputStream();
-    BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
-    PrintWriter writer = new PrintWriter(outputStream, true);
+      OutputStream outputStream = client.getOutputStream();
+      BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
+      PrintWriter writer = new PrintWriter(outputStream, true);
 
-      while ((line = reader.readLine()) != null && !line.isEmpty()) {
-        if (line.trim().isEmpty()) {
-          isBody = true;
-        } else if (isBody) {
-          body.add(line);
-        } else {
-          list.add(line);
+        while ((line = reader.readLine()) != null && !line.isEmpty()) {
+          headers.add(line);
+          if (line.toLowerCase().startsWith("content-length:")) {
+            String clStr = line.substring("content-length:".length()).trim();
+            contentLengthInt = Integer.parseInt(clStr);
+          }
         }
+      String requestBody = "";
+      if (contentLengthInt > 0) {
+        char[] bodyChars = new char[contentLengthInt];
+        int totalRead = 0;
+        while (totalRead < contentLengthInt) {
+          int readCount = reader.read(bodyChars, totalRead, contentLengthInt - totalRead);
+          if (readCount == -1) {
+            break;
+          }
+          totalRead += readCount;
+        }
+        requestBody = new String(bodyChars, 0, totalRead);
       }
 
-      if (!list.isEmpty()) {
-        HttpRequest httpRequest;
-        if (isBody) {
-          httpRequest = new HttpRequest(list, body);
-        } else {
-          httpRequest = new HttpRequest(list);
-        }
-        HttpResponse httpResponse = new HttpResponse(httpRequest, directory);
-        if (directory == null) {
-          httpResponse.buildResponse();
-        } else {
-          httpResponse.directoryResponse();
-        }
-        writer.print(httpResponse);
-        writer.flush();
-      }
-
-    } catch (IOException e) {
-      System.out.println("IOException: " + e.getMessage());
+      HttpRequest httpRequest = requestBody.isEmpty()
+              ? new HttpRequest(headers)
+              : new HttpRequest(headers, List.of(requestBody));
+          HttpResponse httpResponse = new HttpResponse(httpRequest, directory);
+          if (directory == null) {
+            httpResponse.buildResponse();
+          } else {
+            httpResponse.directoryResponse();
+          }
+          writer.print(httpResponse);
+          writer.flush();
+        } catch (IOException ex) {
+        throw new RuntimeException(ex);
     }
   }
 }
