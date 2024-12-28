@@ -61,8 +61,8 @@ public class HttpRequest {
     private void setEncoding(String encoding) {
         String[] tmp = encoding.split(" ");
         for (String s : tmp) {
-            if (s.contains(tmp[1].trim())) {
-                this.encoding = tmp[1].trim();
+            if (validEncodings.contains(s.trim().replace(",",""))) {
+                this.encoding = s.trim().replace(",","");
                 break;
             }
         }
