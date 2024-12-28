@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -8,12 +9,19 @@ public class HttpRequest {
     private List<String> body;
     private List<String> headers;
     private ArrayList<String> request = new ArrayList<>();
+    private String encoding;
+    private ArrayList<String> validEncodings = new ArrayList<>(List.of("gzip"));
 
     public HttpRequest(ArrayList<String> request) {
         this.request = request;
         splitMethod(request.getFirst());
         List<String> requestHeaders = request.subList(1, request.size());
         setHeaders(requestHeaders);
+        for (String header : requestHeaders) {
+            if (header.contains("Accept-Encoding")) {
+                setEncoding(header);
+            }
+        }
 
     }
 
@@ -23,6 +31,11 @@ public class HttpRequest {
         List<String> requestHeaders = request.subList(1, request.size());
         setHeaders(requestHeaders);
         setBody(body);
+        for (String header : requestHeaders) {
+            if (header.contains("Accept-Encoding")) {
+                setEncoding(header);
+            }
+        }
 
     }
 
@@ -45,6 +58,13 @@ public class HttpRequest {
         this.body = body;
     }
 
+    private void setEncoding(String encoding) {
+        String[] tmp = encoding.split(":");
+        if (validEncodings.contains(tmp[1].trim())) {
+            this.encoding = tmp[1].trim();
+        }
+    }
+
     public String getUrl() {
         return this.url;
     }
@@ -59,6 +79,10 @@ public class HttpRequest {
 
     public List<String> getHeaders() {
         return this.headers;
+    }
+
+    public String getEncoding() {
+        return this.encoding;
     }
 
 }

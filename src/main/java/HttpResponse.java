@@ -1,8 +1,10 @@
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.zip.GZIPOutputStream;
 
 public class HttpResponse {
     private int statusCode;
@@ -13,10 +15,14 @@ public class HttpResponse {
     private Path directory;
     private byte[] bodyBytes;
     private int contentLength;
+    private String contentEncoding;
 
     public HttpResponse(HttpRequest request, Path directory) {
         this.request = request;
         this.directory = directory;
+        if (request.getEncoding() != null) {
+            this.contentEncoding = request.getEncoding();
+        }
     }
 
     public void setStatusCode(int statusCode) {
@@ -152,6 +158,15 @@ public class HttpResponse {
     }
 
 
+    private static byte[] gzipCompress(byte[] data) throws IOException {
+        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+        try (GZIPOutputStream gzipOut = new GZIPOutputStream(byteStream)) {
+            gzipOut.write(data);
+            gzipOut.finish();
+        }
+        return byteStream.toByteArray();
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -160,6 +175,9 @@ public class HttpResponse {
                 .append(" ")
                 .append(statusMessage)
                 .append("\r\n");
+        if (contentEncoding != null) {
+            sb.append("Content-Encoding: ").append(contentEncoding).append("\r\n");
+        }
 
         if (contentType != null) {
             sb.append("Content-Type: ").append(contentType).append("\r\n");
